@@ -1,18 +1,16 @@
-import React, {FC, useState, useEffect} from 'react';
-import {StyleSheet, Text, View, SafeAreaView, TouchableOpacity, FlatList, Modal, TextInput, Animated} from 'react-native';
+import React, {FC, useState, useEffect, useRef} from 'react';
+import {StyleSheet, Text, View, SafeAreaView, TouchableOpacity, FlatList, Modal, TextInput, Animated,} from 'react-native';
 import todoList from '../api/todoList.json';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import {EvilIcons} from '@expo/vector-icons';
 import {Feather} from '@expo/vector-icons';
-
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 type Todo = {
   id: number;
   todo: string;
   done: boolean;
 }
-
-type Mode = 'list' | 'add';
 
 const HomeScreen: FC = () => {
   const [ready, setReady] = useState(false);
@@ -25,60 +23,28 @@ const HomeScreen: FC = () => {
     getReady();
   }, []);
 
-  const [mode, setMode] = useState<Mode>('list');
-  const changeMode = (mode: Mode) => {
-    setMode(mode);
-  }
-
+  
   const [todos, setTodos] = useState<Todo[]>([]);
   const addTodo = (todo: Todo) => {
     setTodos(todos => [...todos, todo]);
   }
 
   const handleAdd = () => {
-    if (!title || !description) return;
-
-    const newTodo: Todo = {
-      id: setTodos.length === 0 ? 1 : todos[todos.length - 1].id + 1,
-      title,
-      description,
-      done: false
-    }
-    addTodo(newTodo);
-    changeMode('list');
+    console.log('add Button pressed!!!');
   }
-
-  useEffect(() => {
-
-  }, [todos]);
 
   const deleteTodo = (id: number) => {
     setTodos(todos => todos.filter(todo => todo.id !== id));
   }
 
-  const handleDelete = (id: number) => {
-    deleteTodo(id);
+  const delteAllTodo = () => {
+    const newTodo = [...todos];
+    newTodo.splice(0)
+    setTodos(newTodo);
   }
 
-  const rightActions = (id: number) => {
-    return (
-      <TouchableOpacity
-        onPress={() => handleDelete(id)}
-        style={{}}
-        >
-        <View style={styles.swipeDelete}>
-          <Animated.Text
-            style={{
-              color: '#fff',
-              fontFamily: "Hiragino Sans",
-              padding: 20,
-            }}
-          >
-          Delete
-          </Animated.Text>
-        </View>
-      </TouchableOpacity>
-    );
+  const handleDelete = (id: number) => {
+    deleteTodo(id);
   }
 
   const changeTodoState = (id: number) => {
@@ -95,48 +61,84 @@ const HomeScreen: FC = () => {
     }
   }
 
+  const rightActions = (id: number) => {
+    return (
+      <TouchableOpacity
+        onPress={() => handleDelete(id)}
+        >
+        <View style={styles.swipeDelete}>
+          <Animated.Text
+            style={{
+              color: '#fff',
+              fontFamily: "Hiragino Sans",
+              padding: 20,
+            }}
+          >
+          Delete
+          </Animated.Text>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
   return (
-    <>
-      <SafeAreaView　style={styles.container}>
-        <View>
+    <SafeAreaView　style={styles.container}>
+      <View style={styles.titleArea}>
+        <View style={{alignItems: 'center'}}>
           <Text style={styles.plus}>
-            just MEMO ...
+            TODOアプリ
           </Text>
         </View>
-        <View style={styles.todo_wrapper}>
-          <FlatList
-            data={todos}
-            renderItem={({item: todo}) => {
-              return (
-                <Swipeable
-                  renderRightActions={() => rightActions(todo.id)}
-                  friction={3}
-                >
-                  <View style={styles.todo_container}>
-                    <TouchableOpacity onPress={() => changeTodoState(todo.id)}>
-                      {!todo.done
-                        ? <Feather name="square" size={30} color="white" />
-                        : <Feather name="check-square" size={30} color="white" />
-                      }
-                    </TouchableOpacity>
-                    <View style={styles.todo_Wrapper}>
-                      <Text numberOfLines={2} style={styles.todo_title}>
-                        {todo.todo}
-                      </Text>
-                    </View>
-                  </View>
-                </Swipeable>
-              );
-            }}
-            keyExtractor={(_, index) => index.toString()}
-          >
-          </FlatList>
-        </View>
-        <TouchableOpacity style={{flex: 1, margin: 15}}>
-          <EvilIcons name="plus" size={40} color="white" />
+        <TouchableOpacity style={{position: 'absolute', right: 20}} onPress={delteAllTodo}>
+          <Feather name="trash-2" size={24} color="white" />
         </TouchableOpacity>
-      </SafeAreaView>
-    </>
+      </View>
+      <View style={styles.todo_wrapper}>
+        <FlatList
+          data={todos}
+          renderItem={({item: todo}) => {
+            return (
+              <Swipeable
+                renderRightActions={() => rightActions(todo.id)}
+                friction={2}
+                overshootRight={false}
+              >
+                <View style={styles.todo_container}>
+                  <TouchableOpacity onPress={() => changeTodoState(todo.id)}>
+                    {todo.done
+                      ? <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={30} color="white" />
+                      : <MaterialCommunityIcons name="checkbox-blank-circle-outline" size={30} color="white" />
+                    }
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.todo_Wrapper} onPress={() => {}}>
+                    <Text numberOfLines={2} style={{
+                      width: '85%',
+                      fontSize: 15,
+                      lineHeight: 20,
+                      textAlign: 'left',
+                      fontFamily: "Hiragino Sans",
+                      color: todo.done ? '#C5C8C9' : '#fff',
+                      textDecorationLine: todo.done ? 'line-through' : 'none',
+                    }}>
+                      {todo.todo}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </Swipeable>
+            );
+          }}
+          keyExtractor={item => item.todo}
+        >
+        </FlatList>
+      </View>
+      <TouchableOpacity style={{
+        position: 'absolute',
+        bottom: 40,
+        right: 30,
+        }}>
+        <EvilIcons name="plus" size={60} color="#2A77CC" />
+      </TouchableOpacity>
+    </SafeAreaView>
   )
 }
 
@@ -144,6 +146,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'rgb(28, 28, 30)',
+  },
+  titleArea: {
+    flexDirection: 'row',
+    marginTop: 15,
+    justifyContent: 'center',
   },
   modal: {
     justifyContent: 'center', 
@@ -195,9 +202,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: 'Hiragino Sans',
     textAlign: 'center',
-    color: '#4169e1',
+    color: '#2A77CC',
     fontWeight: 'bold',
-    marginTop: 15,
     paddingLeft: 15,
   },
   add: {
