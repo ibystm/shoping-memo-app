@@ -1,10 +1,13 @@
 import React, {FC, useState, useEffect, useRef} from 'react';
-import {StyleSheet, Text, View, SafeAreaView, TouchableOpacity, FlatList, Modal, TextInput, Animated,} from 'react-native';
+import {StyleSheet, Text, View, SafeAreaView, TouchableOpacity, FlatList, TextInput, Animated, Button, KeyboardAvoidingView, ActionSheetIOS, Keyboard,} from 'react-native';
 import todoList from '../api/todoList.json';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
-import {EvilIcons} from '@expo/vector-icons';
 import {Feather} from '@expo/vector-icons';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import {MaterialCommunityIcons} from '@expo/vector-icons';
+import { AntDesign } from '@expo/vector-icons';
+import {ScrollView, TouchableWithoutFeedback} from 'react-native-gesture-handler';
+import Modal from 'react-native-modal';
+import AddTodoScreeen from './AddTodoScreen';
 
 type Todo = {
   id: number;
@@ -13,24 +16,57 @@ type Todo = {
 }
 
 const HomeScreen: FC = () => {
-  const [ready, setReady] = useState(false);
-  const getReady = () => {
-    setTodos(todoList);
-    setReady(true);
-  }
+  // const [ready, setReady] = useState(false);
+  // const getReady = () => {
+  //   setTodos(todoList);
+  //   setReady(true);
+  // }
 
-  useEffect(() => {
-    getReady();
-  }, []);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [text, setText] = useState('');
+
+  // useEffect(() => {
+  //   getReady();
+  //   // console.warn(text);
+  // }, []);
 
   
   const [todos, setTodos] = useState<Todo[]>([]);
   const addTodo = (todo: Todo) => {
+
     setTodos(todos => [...todos, todo]);
   }
 
   const handleAdd = () => {
-    console.log('add Button pressed!!!');
+    const newId: number = extractMaxId(todos);
+
+    const newTodo: Todo = {
+      id: newId,
+      todo: text,
+      done: false,
+    }
+
+
+    console.log('newTodo####', newTodo.id);
+
+    if (newTodo.todo.length > 0) {
+      setTodos(todos => [...todos, newTodo]);
+    }
+    setText('');
+    setModalVisible(false);
+  }
+
+
+
+  const extractMaxId = (todos: Todo[]): number => {
+    if (todos.length > 0) {
+      // todos　Arrayの中で最大のidを返す
+      const id = Math.max.apply(null, todos.map(todo => todo.id));
+      return id + 1;
+    }
+
+    const firstNumberingId = 0;
+    return firstNumberingId;
   }
 
   const deleteTodo = (id: number) => {
@@ -38,9 +74,23 @@ const HomeScreen: FC = () => {
   }
 
   const delteAllTodo = () => {
-    const newTodo = [...todos];
-    newTodo.splice(0)
-    setTodos(newTodo);
+    if (todos.length > 0) {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          message: 'すべてのリストを削除してもよろしいですか？',
+          options: ['キャンセル', '削除'],
+          destructiveButtonIndex: 1,
+          cancelButtonIndex: 0
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) {
+            const newTodo = [...todos];
+            newTodo.splice(0)
+            setTodos(newTodo);      
+          }
+        }
+      );
+    }
   }
 
   const handleDelete = (id: number) => {
@@ -48,6 +98,9 @@ const HomeScreen: FC = () => {
   }
 
   const changeTodoState = (id: number) => {
+    // なぜか引数のidがINfinityになっている
+    console.log('idは#######', id);
+
     const todo = todos.find(todo => todo.id === id);
     // doneのとき
     if (todo && todo.done) {
@@ -81,63 +134,113 @@ const HomeScreen: FC = () => {
     );
   }
 
+  const onPressAddTodo = () => {
+    setModalVisible(true)
+  }
+
+  const onPressBackDrop = () => {
+    Keyboard.dismiss();
+    setModalVisible(false);
+  }
+
+  const renderItem = ({item}: {item: Todo}) => {
+
+    return (
+      <Swipeable
+        renderRightActions={() => rightActions(item.id)}
+        friction={2}
+        overshootRight={false}
+      >
+        <View style={styles.todo_container}>
+          <TouchableOpacity onPress={() => changeTodoState(item.id)}>
+            {item.done
+              ? <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={30} color="white" />
+              : <MaterialCommunityIcons name="checkbox-blank-circle-outline" size={30} color="white" />}
+          </TouchableOpacity>
+          <Text
+            numberOfLines={1}
+            style={{
+              width: '90%',
+              textAlignVertical: 'center',
+              fontSize: 15,
+              marginLeft: 15,
+              lineHeight: 20,
+              color: item.done ? '#C5C8C9' : '#fff',
+              textDecorationLine: item.done ? 'line-through' : 'none',
+            }}>
+              {item.todo}
+            </Text>
+        </View>
+      </Swipeable>
+    );
+  }
+
   return (
-    <SafeAreaView　style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.titleArea}>
         <View style={{alignItems: 'center'}}>
           <Text style={styles.plus}>
-            TODOアプリ
+            memo
           </Text>
         </View>
         <TouchableOpacity style={{position: 'absolute', right: 20}} onPress={delteAllTodo}>
           <Feather name="trash-2" size={24} color="white" />
         </TouchableOpacity>
       </View>
+
       <View style={styles.todo_wrapper}>
         <FlatList
           data={todos}
-          renderItem={({item: todo}) => {
-            return (
-              <Swipeable
-                renderRightActions={() => rightActions(todo.id)}
-                friction={2}
-                overshootRight={false}
-              >
-                <View style={styles.todo_container}>
-                  <TouchableOpacity onPress={() => changeTodoState(todo.id)}>
-                    {todo.done
-                      ? <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={30} color="white" />
-                      : <MaterialCommunityIcons name="checkbox-blank-circle-outline" size={30} color="white" />
-                    }
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.todo_Wrapper} onPress={() => {}}>
-                    <Text numberOfLines={2} style={{
-                      width: '85%',
-                      fontSize: 15,
-                      lineHeight: 20,
-                      textAlign: 'left',
-                      fontFamily: "Hiragino Sans",
-                      color: todo.done ? '#C5C8C9' : '#fff',
-                      textDecorationLine: todo.done ? 'line-through' : 'none',
-                    }}>
-                      {todo.todo}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </Swipeable>
-            );
-          }}
+          renderItem={todo => renderItem(todo)}
           keyExtractor={item => item.todo}
         >
         </FlatList>
       </View>
-      <TouchableOpacity style={{
+      <TouchableOpacity
+        onPress={onPressAddTodo}
+        style={{
         position: 'absolute',
         bottom: 40,
         right: 30,
         }}>
-        <EvilIcons name="plus" size={60} color="#2A77CC" />
+        <AntDesign name="pluscircle" size={60} color="#2A77CC" />
       </TouchableOpacity>
+      <Modal
+        isVisible={modalVisible}
+        swipeDirection='down'
+        backdropOpacity={0.3}
+        onBackdropPress={onPressBackDrop}
+        style={{
+          justifyContent: 'flex-end',
+        }}
+      >
+        <KeyboardAvoidingView behavior="padding">
+          <View style={{
+            backgroundColor: 'rgb(44, 44, 46)',
+            borderRadius: 10,
+            alignItems: 'center',
+          }}>
+            <TextInput
+              autoFocus={true}
+              keyboardAppearance={'default'}
+              numberOfLines={1}
+              returnKeyType={"done"}
+              onChangeText={e => setText(e)}
+              value={text}
+              placeholder="Ex. Apple"
+              placeholderTextColor='#215ea2'
+              style={styles.modalTextInput}
+            >
+            </TextInput>
+            <TouchableOpacity
+              onPress={handleAdd}
+              style={styles.addButton}
+            >
+              <Text style={styles.addButtonText}>ADD TODO</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -199,8 +302,8 @@ const styles = StyleSheet.create({
     width: '80%',
   },
   plus: {
-    fontSize: 20,
-    fontFamily: 'Hiragino Sans',
+    fontSize: 23,
+    fontFamily: 'Helvetica Neue',
     textAlign: 'center',
     color: '#2A77CC',
     fontWeight: 'bold',
@@ -244,6 +347,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'flex-end',
     height: '98%',
+  },
+  modalTextInput: {
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    color: '#2A77CC',
+    fontSize: 20,
+    paddingBottom: 3,
+    borderBottomColor: '#131314',
+    borderBottomWidth: 1,
+    width: '60%',
+    textAlign: 'center',
+  },
+  addButton: {
+    width: '80%',
+    height: 40,
+    backgroundColor: '#2A77CC',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 40,
+  },
+  addButtonText: {
+    // alignSelf: 'center',
+    color: '#091829',
+    fontSize: 17,
+    textAlign: 'center',
+    fontWeight: 'bold',
   },
 });
 
