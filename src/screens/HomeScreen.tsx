@@ -1,13 +1,12 @@
-import React, {FC, useState, useEffect, useRef} from 'react';
-import {StyleSheet, Text, View, SafeAreaView, TouchableOpacity, FlatList, TextInput, Animated, Button, KeyboardAvoidingView, ActionSheetIOS, Keyboard,} from 'react-native';
-import todoList from '../api/todoList.json';
+import React, {FC, useState, useEffect, useRef, useCallback} from 'react';
+import {StyleSheet, Text, View, SafeAreaView, TouchableOpacity, FlatList, TextInput, Animated, Button, KeyboardAvoidingView, ActionSheetIOS, Keyboard, Alert,} from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import {Feather} from '@expo/vector-icons';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
-import {ScrollView, TouchableWithoutFeedback} from 'react-native-gesture-handler';
 import Modal from 'react-native-modal';
-import AddTodoScreeen from './AddTodoScreen';
+import {AsyncStorage} from 'react-native';
+import DraggableFlatList from 'react-native-draggable-flatlist'
 
 type Todo = {
   id: number;
@@ -16,47 +15,51 @@ type Todo = {
 }
 
 const HomeScreen: FC = () => {
-  // const [ready, setReady] = useState(false);
-  // const getReady = () => {
-  //   setTodos(todoList);
-  //   setReady(true);
-  // }
-
   const [modalVisible, setModalVisible] = useState(false);
   const [text, setText] = useState('');
-
-  // useEffect(() => {
-  //   getReady();
-  //   // console.warn(text);
-  // }, []);
-
-  
   const [todos, setTodos] = useState<Todo[]>([]);
-  const addTodo = (todo: Todo) => {
 
-    setTodos(todos => [...todos, todo]);
-  }
+  useEffect(() => {
+    const loadItems = async () => {
+      const allItemKeys = await AsyncStorage.getAllKeys();
+
+      console.log('#######allItemKeys', allItemKeys);
+      if (allItemKeys.length> 0) {
+        const allStorageItem = await AsyncStorage.multiGet(allItemKeys);
+
+        allStorageItem.map(async item => {
+          const id = Number(item[0]);
+          // すでにtodosの中に要素が1つでも存在しているかどうか
+          const isAdded = todos.some(todo => todo.id == id);
+
+          if (!isAdded) {
+            console.log('isAddedの結果は', isAdded);
+
+            const todo = JSON.parse(item[1]);
+            setTodos(todos => [...todos, todo]);
+            console.log('####このtodoを追加しｔました　', todo);
+          }
+        });
+      }
+    }
+    loadItems();
+  }, []);
 
   const handleAdd = () => {
     const newId: number = extractMaxId(todos);
-
     const newTodo: Todo = {
       id: newId,
       todo: text,
       done: false,
     }
 
-
-    console.log('newTodo####', newTodo.id);
-
     if (newTodo.todo.length > 0) {
       setTodos(todos => [...todos, newTodo]);
     }
     setText('');
     setModalVisible(false);
+    storeTodo(newTodo);
   }
-
-
 
   const extractMaxId = (todos: Todo[]): number => {
     if (todos.length > 0) {
@@ -71,6 +74,8 @@ const HomeScreen: FC = () => {
 
   const deleteTodo = (id: number) => {
     setTodos(todos => todos.filter(todo => todo.id !== id));
+    const stringId = id.toString();
+    AsyncStorage.removeItem(stringId);
   }
 
   const delteAllTodo = () => {
@@ -90,6 +95,7 @@ const HomeScreen: FC = () => {
           }
         }
       );
+      AsyncStorage.clear();
     }
   }
 
@@ -143,8 +149,19 @@ const HomeScreen: FC = () => {
     setModalVisible(false);
   }
 
-  const renderItem = ({item}: {item: Todo}) => {
-
+  const renderItem = (
+    {
+      item,
+      index,
+      drag,
+      isActive
+    }: {
+        item: Todo,
+        index: number,
+        drag: () => void,
+        isActive: boolean
+    }): React.ReactNode => {
+    console.log(isActive);
     return (
       <Swipeable
         renderRightActions={() => rightActions(item.id)}
@@ -157,22 +174,43 @@ const HomeScreen: FC = () => {
               ? <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={30} color="white" />
               : <MaterialCommunityIcons name="checkbox-blank-circle-outline" size={30} color="white" />}
           </TouchableOpacity>
-          <Text
-            numberOfLines={1}
+          <TouchableOpacity
+            onLongPress={drag}
+            // onPressOut={moveEnd}
             style={{
-              width: '90%',
-              textAlignVertical: 'center',
-              fontSize: 15,
-              marginLeft: 15,
-              lineHeight: 20,
-              color: item.done ? '#C5C8C9' : '#fff',
-              textDecorationLine: item.done ? 'line-through' : 'none',
-            }}>
-              {item.todo}
-            </Text>
+            marginLeft: 15,
+            width: '85%',
+          }}>
+            <Text
+              numberOfLines={1}
+              style={{
+                textAlignVertical: 'center',
+                fontSize: 15,
+                lineHeight: 20,
+                color: item.done ? '#C5C8C9' : '#fff',
+                textDecorationLine: item.done ? 'line-through' : 'none',
+              }}>
+                {item.todo}
+              </Text>
+          </TouchableOpacity>
         </View>
-      </Swipeable>
+     </Swipeable>
     );
+  }
+
+  const storeTodo = async (todo: Todo) => {
+    const strinId = todo.id.toString();
+    const todoToString = JSON.stringify(todo);
+    console.log(strinId, todoToString);
+
+    try{
+      await AsyncStorage.setItem(strinId, todoToString);
+      const allItemKeys = await AsyncStorage.getAllKeys();
+      console.log('#######allItemKeys', allItemKeys);
+
+    }catch(e){
+      console.log(e);
+    }
   }
 
   return (
@@ -189,37 +227,31 @@ const HomeScreen: FC = () => {
       </View>
 
       <View style={styles.todo_wrapper}>
-        <FlatList
+        <DraggableFlatList
           data={todos}
-          renderItem={todo => renderItem(todo)}
+          // @ts-ignore
+          renderItem={renderItem}
           keyExtractor={item => item.todo}
-        >
-        </FlatList>
+          scrollEnabled={false}
+          onDragEnd={(todos) => setTodos(todos => todos)}
+        />
       </View>
       <TouchableOpacity
         onPress={onPressAddTodo}
-        style={{
-        position: 'absolute',
-        bottom: 40,
-        right: 30,
-        }}>
+        style={styles.addButtonFloat}>
         <AntDesign name="pluscircle" size={60} color="#2A77CC" />
       </TouchableOpacity>
       <Modal
         isVisible={modalVisible}
         swipeDirection='down'
-        backdropOpacity={0.3}
+        backdropOpacity={0.2}
         onBackdropPress={onPressBackDrop}
         style={{
           justifyContent: 'flex-end',
         }}
       >
         <KeyboardAvoidingView behavior="padding">
-          <View style={{
-            backgroundColor: 'rgb(44, 44, 46)',
-            borderRadius: 10,
-            alignItems: 'center',
-          }}>
+          <View style={styles.modalContainer}>
             <TextInput
               autoFocus={true}
               keyboardAppearance={'default'}
@@ -229,6 +261,7 @@ const HomeScreen: FC = () => {
               value={text}
               placeholder="Ex. Apple"
               placeholderTextColor='#215ea2'
+              enablesReturnKeyAutomatically={true}
               style={styles.modalTextInput}
             >
             </TextInput>
@@ -264,7 +297,7 @@ const styles = StyleSheet.create({
   todo_wrapper: {
     marginTop: 25,
     width: '100%',
-    // height: '100%',
+    height: '100%',
   },
   todo_container: {
     flex: 1,
@@ -288,7 +321,7 @@ const styles = StyleSheet.create({
   deleteWrapper: {
     width: '30%',
     height: '100%',
-    backgroundColor: '#dc143c',
+    backgroundColor: '#F44236',
     justifyContent: 'center',
     paddingRight: 25,
   },
@@ -329,6 +362,11 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#ccc',
   },
+  addButtonFloat: {
+    position: 'absolute',
+    bottom: 40,
+    right: 30,
+    },
   textinput_frame: {
     width: '100%',
     marginBottom: 25,
@@ -343,7 +381,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   swipeDelete: {
-    backgroundColor: 'red',
+    backgroundColor: '#F44236',
     justifyContent: 'center',
     alignItems: 'flex-end',
     height: '98%',
@@ -376,6 +414,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: 'bold',
   },
+  modalContainer: {
+    backgroundColor: 'rgb(44, 44, 46)',
+    borderRadius: 10,
+    alignItems: 'center',
+  }
 });
 
 export default HomeScreen;
