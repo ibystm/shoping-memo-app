@@ -1,5 +1,5 @@
 import React, {FC, useState, useEffect, useRef, useCallback} from 'react';
-import {StyleSheet, Text, View, SafeAreaView, TouchableOpacity, FlatList, TextInput, Animated, Button, KeyboardAvoidingView, ActionSheetIOS, Keyboard, Alert,} from 'react-native';
+import {StyleSheet, Text, View, SafeAreaView, TouchableOpacity, FlatList, TextInput, Animated, Button, KeyboardAvoidingView, ActionSheetIOS, Keyboard} from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import {Feather} from '@expo/vector-icons';
 import {MaterialCommunityIcons} from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { AntDesign } from '@expo/vector-icons';
 import Modal from 'react-native-modal';
 import {AsyncStorage} from 'react-native';
 import DraggableFlatList from 'react-native-draggable-flatlist'
+import * as Haptics from 'expo-haptics';
 
 type Todo = {
   id: number;
@@ -26,12 +27,10 @@ const HomeScreen: FC = () => {
       console.log('#######allItemKeys', allItemKeys);
       if (allItemKeys.length> 0) {
         const allStorageItem = await AsyncStorage.multiGet(allItemKeys);
-
         allStorageItem.map(async item => {
           const id = Number(item[0]);
           // すでにtodosの中に要素が1つでも存在しているかどうか
           const isAdded = todos.some(todo => todo.id == id);
-
           if (!isAdded) {
             console.log('isAddedの結果は', isAdded);
 
@@ -43,6 +42,7 @@ const HomeScreen: FC = () => {
       }
     }
     loadItems();
+
   }, []);
 
   const handleAdd = () => {
@@ -57,7 +57,7 @@ const HomeScreen: FC = () => {
       setTodos(todos => [...todos, newTodo]);
     }
     setText('');
-    setModalVisible(false);
+    // setModalVisible(false);
     storeTodo(newTodo);
   }
 
@@ -141,6 +141,7 @@ const HomeScreen: FC = () => {
   }
 
   const onPressAddTodo = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setModalVisible(true)
   }
 
@@ -161,21 +162,33 @@ const HomeScreen: FC = () => {
         drag: () => void,
         isActive: boolean
     }): React.ReactNode => {
-    console.log(isActive);
     return (
       <Swipeable
         renderRightActions={() => rightActions(item.id)}
         friction={2}
         overshootRight={false}
       >
-        <View style={styles.todo_container}>
+        <View style={{
+              flex: 1,
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 1,
+              paddingLeft: 15,
+              backgroundColor: '#2c2c2e',
+              width: '100%',
+              height: isActive ? 75 : 60,
+        }}>
           <TouchableOpacity onPress={() => changeTodoState(item.id)}>
             {item.done
               ? <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={30} color="white" />
               : <MaterialCommunityIcons name="checkbox-blank-circle-outline" size={30} color="white" />}
           </TouchableOpacity>
           <TouchableOpacity
-            onLongPress={drag}
+            onLongPress={() => {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              drag()
+            }}
             // onPressOut={moveEnd}
             style={{
             marginLeft: 15,
@@ -185,7 +198,7 @@ const HomeScreen: FC = () => {
               numberOfLines={1}
               style={{
                 textAlignVertical: 'center',
-                fontSize: 15,
+                fontSize: isActive ? 17: 15,
                 lineHeight: 20,
                 color: item.done ? '#C5C8C9' : '#fff',
                 textDecorationLine: item.done ? 'line-through' : 'none',
@@ -232,8 +245,7 @@ const HomeScreen: FC = () => {
           // @ts-ignore
           renderItem={renderItem}
           keyExtractor={item => item.todo}
-          scrollEnabled={false}
-          onDragEnd={(todos) => setTodos(todos => todos)}
+          onDragEnd={({data}) => setTodos(data)}
         />
       </View>
       <TouchableOpacity
@@ -259,7 +271,7 @@ const HomeScreen: FC = () => {
               returnKeyType={"done"}
               onChangeText={e => setText(e)}
               value={text}
-              placeholder="Ex. Apple"
+              placeholder="例: りんご"
               placeholderTextColor='#215ea2'
               enablesReturnKeyAutomatically={true}
               style={styles.modalTextInput}
@@ -281,7 +293,7 @@ const HomeScreen: FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'rgb(28, 28, 30)',
+    backgroundColor: '#1c1c1e',
   },
   titleArea: {
     flexDirection: 'row',
@@ -298,17 +310,6 @@ const styles = StyleSheet.create({
     marginTop: 25,
     width: '100%',
     height: '100%',
-  },
-  todo_container: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 1,
-    paddingLeft: 15,
-    backgroundColor: 'rgb(44, 44, 46)',
-    width: '100%',
-    height: 60,
   },
   todo_title: {
     width: '85%',
