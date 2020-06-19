@@ -54,7 +54,7 @@ const HomeScreen: FC = () => {
     }
 
     if (newTodo.todo.length > 0) {
-      setTodos(todos => [...todos, newTodo]);
+      setTodos(todos => [newTodo, ...todos]);
     }
     setText('');
     // setModalVisible(false);
@@ -177,7 +177,7 @@ const HomeScreen: FC = () => {
               paddingLeft: 15,
               backgroundColor: '#2c2c2e',
               width: '100%',
-              height: isActive ? 70 : 60,
+              height: isActive ? 70 : 55,
         }}>
           <TouchableOpacity onPress={() => changeTodoState(item.id)}>
             {item.done
@@ -271,7 +271,6 @@ const HomeScreen: FC = () => {
               returnKeyType={"done"}
               onChangeText={e => setText(e)}
               value={text}
-              placeholder="例: りんご"
               placeholderTextColor='#215ea2'
               enablesReturnKeyAutomatically={true}
               style={styles.modalTextInput}
@@ -307,6 +306,7 @@ const styles = StyleSheet.create({
     height: 400,
   },
   todo_wrapper: {
+    flex: 1,
     marginTop: 25,
     width: '100%',
     height: '100%',
@@ -331,9 +331,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontFamily: 'Hiragino Sans',
     textAlign: 'center',
-  },
-  todo_Wrapper: {
-    width: '80%',
   },
   plus: {
     fontSize: 23,
@@ -393,9 +390,10 @@ const styles = StyleSheet.create({
     color: '#2A77CC',
     fontSize: 20,
     paddingBottom: 3,
+    fontFamily: 'Helvetica Neue',
     borderBottomColor: '#131314',
     borderBottomWidth: 1,
-    width: '60%',
+    width: '70%',
     textAlign: 'center',
   },
   addButton: {
