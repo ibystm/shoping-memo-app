@@ -177,7 +177,7 @@ const HomeScreen: FC = () => {
               paddingLeft: 15,
               backgroundColor: '#2c2c2e',
               width: '100%',
-              height: isActive ? 75 : 60,
+              height: isActive ? 70 : 60,
         }}>
           <TouchableOpacity onPress={() => changeTodoState(item.id)}>
             {item.done
