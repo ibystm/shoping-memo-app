@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "shopping-memo-app",
+    "name": "minimal TODO",
     "slug": "shopping-memo-app",
     "platforms": [
       "ios",
@@ -22,7 +22,12 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
-    }
+      "supportsTablet": true,
+      "bundleIdentifier": "com.KosukeTakahashi.darkmemo",
+      "buildNumber": "1.0.0"
+    },
+    "android": {
+        "package": "com.KosukeTakahashi.darkmemo"
+      }
   }
 }

@@ -8,12 +8,42 @@ import Modal from 'react-native-modal';
 import {AsyncStorage} from 'react-native';
 import DraggableFlatList from 'react-native-draggable-flatlist'
 import * as Haptics from 'expo-haptics';
+import {
+  useFonts,
+  OpenSans_300Light,
+  OpenSans_300Light_Italic,
+  OpenSans_400Regular,
+  OpenSans_400Regular_Italic,
+  OpenSans_600SemiBold,
+  OpenSans_600SemiBold_Italic,
+  OpenSans_700Bold,
+  OpenSans_700Bold_Italic,
+  OpenSans_800ExtraBold,
+  OpenSans_800ExtraBold_Italic,
+} from '@expo-google-fonts/open-sans';
+import { AppLoading } from 'expo';
 
 type Todo = {
   id: number;
   todo: string;
   done: boolean;
 }
+
+export const f = () => {
+  let [fontsLoaded] = useFonts({
+    OpenSans_300Light,
+    OpenSans_300Light_Italic,
+    OpenSans_400Regular,
+    OpenSans_400Regular_Italic,
+    OpenSans_600SemiBold,
+    OpenSans_600SemiBold_Italic,
+    OpenSans_700Bold,
+    OpenSans_700Bold_Italic,
+    OpenSans_800ExtraBold,
+    OpenSans_800ExtraBold_Italic,
+  });  
+}
+
 
 const HomeScreen: FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -124,6 +154,7 @@ const HomeScreen: FC = () => {
     return (
       <TouchableOpacity
         onPress={() => handleDelete(id)}
+        style={{width: '100%'}}
         >
         <View style={styles.swipeDelete}>
           <Animated.Text
@@ -131,6 +162,7 @@ const HomeScreen: FC = () => {
               color: '#fff',
               fontFamily: "Hiragino Sans",
               padding: 20,
+              fontWeight: 'bold',
             }}
           >
           Delete
@@ -166,7 +198,11 @@ const HomeScreen: FC = () => {
       <Swipeable
         renderRightActions={() => rightActions(item.id)}
         friction={2}
-        overshootRight={false}
+        rightThreshold={100}
+        overshootFriction={12}
+        onSwipeableRightWillOpen={() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)}
+        onSwipeableRightOpen={() => deleteTodo(item.id)}
+        // overshootRight={false}
       >
         <View style={{
               flex: 1,
@@ -178,10 +214,11 @@ const HomeScreen: FC = () => {
               backgroundColor: '#2c2c2e',
               width: '100%',
               height: isActive ? 70 : 55,
+              borderRadius: 5,
         }}>
           <TouchableOpacity onPress={() => changeTodoState(item.id)}>
             {item.done
-              ? <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={30} color="white" />
+              ? <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={30} color="#2A77CC" />
               : <MaterialCommunityIcons name="checkbox-blank-circle-outline" size={30} color="white" />}
           </TouchableOpacity>
           <TouchableOpacity
@@ -189,7 +226,6 @@ const HomeScreen: FC = () => {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               drag()
             }}
-            // onPressOut={moveEnd}
             style={{
             marginLeft: 15,
             width: '85%',
@@ -200,7 +236,7 @@ const HomeScreen: FC = () => {
                 textAlignVertical: 'center',
                 fontSize: isActive ? 17: 15,
                 lineHeight: 20,
-                color: item.done ? '#C5C8C9' : '#fff',
+                color: item.done ? 'gray' : '#fff',
                 textDecorationLine: item.done ? 'line-through' : 'none',
               }}>
                 {item.todo}
@@ -226,67 +262,101 @@ const HomeScreen: FC = () => {
     }
   }
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.titleArea}>
-        <View style={{alignItems: 'center'}}>
-          <Text style={styles.plus}>
-            memo
-          </Text>
-        </View>
-        <TouchableOpacity style={{position: 'absolute', right: 20}} onPress={delteAllTodo}>
-          <Feather name="trash-2" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
+  let [fontsLoaded] = useFonts({
+    OpenSans_300Light,
+    OpenSans_300Light_Italic,
+    OpenSans_400Regular,
+    OpenSans_400Regular_Italic,
+    OpenSans_600SemiBold,
+    OpenSans_600SemiBold_Italic,
+    OpenSans_700Bold,
+    OpenSans_700Bold_Italic,
+    OpenSans_800ExtraBold,
+    OpenSans_800ExtraBold_Italic,
+  });  
 
-      <View style={styles.todo_wrapper}>
-        <DraggableFlatList
-          data={todos}
-          // @ts-ignore
-          renderItem={renderItem}
-          keyExtractor={item => item.todo}
-          onDragEnd={({data}) => setTodos(data)}
-        />
-      </View>
-      <TouchableOpacity
-        onPress={onPressAddTodo}
-        style={styles.addButtonFloat}>
-        <AntDesign name="pluscircle" size={60} color="#2A77CC" />
-      </TouchableOpacity>
-      <Modal
-        isVisible={modalVisible}
-        swipeDirection='down'
-        backdropOpacity={0.2}
-        onBackdropPress={onPressBackDrop}
-        style={{
-          justifyContent: 'flex-end',
-        }}
-      >
-        <KeyboardAvoidingView behavior="padding">
-          <View style={styles.modalContainer}>
-            <TextInput
-              autoFocus={true}
-              keyboardAppearance={'default'}
-              numberOfLines={1}
-              returnKeyType={"done"}
-              onChangeText={e => setText(e)}
-              value={text}
-              placeholderTextColor='#215ea2'
-              enablesReturnKeyAutomatically={true}
-              style={styles.modalTextInput}
-            >
-            </TextInput>
-            <TouchableOpacity
-              onPress={handleAdd}
-              style={styles.addButton}
-            >
-              <Text style={styles.addButtonText}>ADD TODO</Text>
-            </TouchableOpacity>
+
+  if (!fontsLoaded) {
+    return <AppLoading />;
+  } else {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.titleArea}>
+          <View style={{alignItems: 'center'}}>
+            <Text style={styles.plus}>
+              TODO
+            </Text>
           </View>
-        </KeyboardAvoidingView>
-      </Modal>
-    </SafeAreaView>
-  )
+          <TouchableOpacity style={{position: 'absolute', right: 20}} onPress={delteAllTodo}>
+            <Feather name="trash-2" size={24} color="#eaeaec" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.todo_wrapper}>
+          <DraggableFlatList
+            data={todos}
+            // @ts-ignore
+            renderItem={renderItem}
+            keyExtractor={item => item.todo}
+            onDragEnd={({data}) => setTodos(data)}
+          />
+        </View>
+        <TouchableOpacity
+          onPress={onPressAddTodo}
+          style={styles.addButtonFloat}>
+          <AntDesign name="pluscircle" size={60} color="#2A77CC" />
+        </TouchableOpacity>
+        <Modal
+          isVisible={modalVisible}
+          swipeDirection='down'
+          backdropOpacity={0.2}
+          onBackdropPress={onPressBackDrop}
+          style={{
+            justifyContent: 'flex-end',
+          }}
+        >
+          <KeyboardAvoidingView behavior="padding">
+            <View style={styles.modalContainer}>
+              <TextInput
+                autoFocus={true}
+                keyboardAppearance={'dark'}
+                numberOfLines={1}
+                returnKeyType={"done"}
+                onChangeText={e => setText(e)}
+                value={text}
+                placeholderTextColor='#215ea2'
+                enablesReturnKeyAutomatically={true}
+                style={styles.modalTextInput}
+              >
+              </TextInput>
+              <TouchableOpacity
+                onPress={handleAdd}
+                style={{
+                  width: '80%',
+                  height: 45,
+                  backgroundColor: text.length === 0 ? '#424247' : '#2A77CC',
+                  borderRadius: 10,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginTop: 20,
+                  marginBottom: 40,
+  
+                }}
+                disabled={text.length === 0}
+              >
+                <Text style={{
+                  color: text.length === 0 ? '#b8b8bc' : '#fff',
+                  fontSize: 17,
+                  textAlign: 'center',
+                  fontWeight: 'bold',
+              
+                }}>ADD TODO</Text>
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        </Modal>
+      </SafeAreaView>
+    )
+  }
 }
 
 const styles = StyleSheet.create({
@@ -298,6 +368,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: 15,
     justifyContent: 'center',
+    // height: 40,
   },
   modal: {
     justifyContent: 'center', 
@@ -333,8 +404,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   plus: {
-    fontSize: 23,
-    fontFamily: 'Helvetica Neue',
+    fontSize: 20,
+    fontFamily: 'Hiragino Sans',
     textAlign: 'center',
     color: '#2A77CC',
     fontWeight: 'bold',
@@ -383,6 +454,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'flex-end',
     height: '98%',
+    width: '100%',
   },
   modalTextInput: {
     paddingTop: 20,
@@ -398,9 +470,9 @@ const styles = StyleSheet.create({
   },
   addButton: {
     width: '80%',
-    height: 40,
+    height: 45,
     backgroundColor: '#2A77CC',
-    borderRadius: 8,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
