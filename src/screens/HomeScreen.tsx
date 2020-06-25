@@ -29,22 +29,6 @@ type Todo = {
   done: boolean;
 }
 
-export const f = () => {
-  let [fontsLoaded] = useFonts({
-    OpenSans_300Light,
-    OpenSans_300Light_Italic,
-    OpenSans_400Regular,
-    OpenSans_400Regular_Italic,
-    OpenSans_600SemiBold,
-    OpenSans_600SemiBold_Italic,
-    OpenSans_700Bold,
-    OpenSans_700Bold_Italic,
-    OpenSans_800ExtraBold,
-    OpenSans_800ExtraBold_Italic,
-  });  
-}
-
-
 const HomeScreen: FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [text, setText] = useState('');
@@ -252,12 +236,12 @@ const HomeScreen: FC = () => {
     const todoToString = JSON.stringify(todo);
     console.log(strinId, todoToString);
 
-    try{
+    try {
       await AsyncStorage.setItem(strinId, todoToString);
       const allItemKeys = await AsyncStorage.getAllKeys();
       console.log('#######allItemKeys', allItemKeys);
 
-    }catch(e){
+    } catch(e) {
       console.log(e);
     }
   }
