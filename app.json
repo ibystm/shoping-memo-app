@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "minimal TODO",
+    "name": "TODO mini",
     "slug": "shopping-memo-app",
     "platforms": [
       "ios",
       "android",
       "web"
     ],
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -24,7 +24,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.KosukeTakahashi.darkmemo",
-      "buildNumber": "1.0.0"
+      "buildNumber": "1.2.0"
     },
     "android": {
         "package": "com.KosukeTakahashi.darkmemo"
