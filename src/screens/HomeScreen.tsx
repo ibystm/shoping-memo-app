@@ -35,22 +35,21 @@ const HomeScreen: FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
 
   useEffect(() => {
+    if (todos.length > 0) {
+      AsyncStorage.clear();
+    }
+
     const loadItems = async () => {
       const allItemKeys = await AsyncStorage.getAllKeys();
-
-      console.log('#######allItemKeys', allItemKeys);
       if (allItemKeys.length> 0) {
         const allStorageItem = await AsyncStorage.multiGet(allItemKeys);
         allStorageItem.map(async item => {
           const id = Number(item[0]);
           // すでにtodosの中に要素が1つでも存在しているかどうか
-          const isAdded = todos.some(todo => todo.id == id);
-          if (!isAdded) {
-            console.log('isAddedの結果は', isAdded);
-
+          const isAlreadyAdded = todos.some(todo => todo.id == id);
+          if (!isAlreadyAdded) {
             const todo = JSON.parse(item[1]);
             setTodos(todos => [...todos, todo]);
-            console.log('####このtodoを追加しｔました　', todo);
           }
         });
       }
@@ -71,7 +70,6 @@ const HomeScreen: FC = () => {
       setTodos(todos => [newTodo, ...todos]);
     }
     setText('');
-    // setModalVisible(false);
     storeTodo(newTodo);
   }
 
@@ -105,7 +103,7 @@ const HomeScreen: FC = () => {
           if (buttonIndex === 1) {
             const newTodo = [...todos];
             newTodo.splice(0)
-            setTodos(newTodo);      
+            setTodos(newTodo);
           }
         }
       );
@@ -122,15 +120,19 @@ const HomeScreen: FC = () => {
     console.log('idは#######', id);
 
     const todo = todos.find(todo => todo.id === id);
+
+    console.log(todo);
+
     // doneのとき
     if (todo && todo.done) {
       todo.done = false;
       setTodos([...todos]);
-
+      storeTodo(todo);
       // doneじゃないとき
     } else if (todo && !todo.done) {
       todo.done = true;
       setTodos([...todos]);
+      storeTodo(todo);
     }
   }
 
@@ -323,7 +325,6 @@ const HomeScreen: FC = () => {
                   alignItems: 'center',
                   marginTop: 20,
                   marginBottom: 40,
-  
                 }}
                 disabled={text.length === 0}
               >
