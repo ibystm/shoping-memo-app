@@ -7,7 +7,7 @@
       "android",
       "web"
     ],
-    "version": "1.2.0",
+    "version": "1.2.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -24,7 +24,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.KosukeTakahashi.darkmemo",
-      "buildNumber": "1.2.0"
+      "buildNumber": "1.2.2"
     },
     "android": {
         "package": "com.KosukeTakahashi.darkmemo"
